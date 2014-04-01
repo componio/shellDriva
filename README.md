@@ -1,4 +1,4 @@
-nbDriva
+shellDriva
 =======
 
 The source distribution for the shell extension of nbDriva
