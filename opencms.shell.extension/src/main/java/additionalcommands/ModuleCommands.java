@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 import org.opencms.configuration.CmsConfigurationException;
+import org.opencms.db.CmsDbEntryNotFoundException;
 import org.opencms.db.CmsExportPoint;
 import org.opencms.file.CmsObject;
 import org.opencms.file.types.CmsResourceTypeFolder;
@@ -23,10 +24,12 @@ import org.opencms.importexport.CmsImportParameters;
 import org.opencms.lock.CmsLockException;
 import org.opencms.main.CmsException;
 import org.opencms.main.CmsShell;
+import org.opencms.main.CmsSystemInfo;
 import org.opencms.main.I_CmsShellCommands;
 import org.opencms.main.Messages;
 import org.opencms.main.OpenCms;
 import org.opencms.module.CmsModule;
+import org.opencms.module.CmsModuleImportExportHandler;
 import org.opencms.report.CmsShellReport;
 import org.opencms.security.CmsRoleViolationException;
 import org.opencms.security.CmsSecurityException;
@@ -48,10 +51,10 @@ import static projectconstants.ProjectConstants.PATH_TEMPLATES;
  * @author Thomas
  */
 public class ModuleCommands implements I_CmsShellCommands {
-
+    
     private CmsObject m_cms;
     private CmsShell m_shell;
-
+    
     public ModuleCommands() {
     }
 
@@ -152,7 +155,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             String path = modulePath + PATH_ELEMENTS;
             cms.createResource(path, folderId);
         }
-
+        
         if (module.isCreateFormattersFolder()) {
             String path = modulePath + PATH_FORMATTERS;
             cms.createResource(path, folderId);
@@ -233,7 +236,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             }
         }
     }
-
+    
     private void syncRFSandVFSWithSettings(CmsSynchronizeSettings settings) throws CmsSynchronizeException, CmsException {
         new CmsSynchronize(m_cms, settings, new CmsShellReport(m_cms.getRequestContext().getLocale()));
     }
@@ -373,6 +376,48 @@ public class ModuleCommands implements I_CmsShellCommands {
     }
 
     /**
+     * Exports the module with the given name to the default location and
+     * modifies the version number of the module
+     * @param moduleName the name of the module to export
+     * @throws Exception if something goes wrong *
+     * copied from https://github.com/alkacon/opencms-core/blob/build_8_5_2/src/org/opencms/main/CmsShellCommands.java
+     */
+    public void exportModuleWithVersion(String moduleName, String version) throws Exception {
+        CmsModule module = OpenCms.getModuleManager().getModule(moduleName);
+        module.getVersion().setVersion(version);
+        OpenCms.getModuleManager().updateModule(m_cms, module);
+        
+        if (module == null) {
+            throw new CmsDbEntryNotFoundException(Messages.get().container(Messages.ERR_UNKNOWN_MODULE_1, moduleName));
+        }
+        
+        String filename = OpenCms.getSystemInfo().getAbsoluteRfsPathRelativeToWebInf(
+                OpenCms.getSystemInfo().getPackagesRfsPath()
+                + CmsSystemInfo.FOLDER_MODULES
+                + moduleName
+                + "_"
+                + OpenCms.getModuleManager().getModule(moduleName).getVersion().toString());
+        
+        String[] resources = new String[module.getResources().size()];
+        System.arraycopy(module.getResources().toArray(), 0, resources, 0, resources.length);
+
+        // generate a module export handler
+        CmsModuleImportExportHandler moduleExportHandler = new CmsModuleImportExportHandler();
+        moduleExportHandler.setFileName(filename);
+        moduleExportHandler.setAdditionalResources(resources);
+        moduleExportHandler.setModuleName(module.getName().replace('\\', '/'));
+        moduleExportHandler.setDescription(getMessages().key(
+                Messages.GUI_SHELL_IMPORTEXPORT_MODULE_HANDLER_NAME_1,
+                new Object[]{moduleExportHandler.getModuleName()}));
+
+        // export the module
+        OpenCms.getImportExportManager().exportData(
+                m_cms,
+                moduleExportHandler,
+                new CmsShellReport(m_cms.getRequestContext().getLocale()));
+    }
+
+    /**
      *
      * @param cms
      * @param shell
@@ -431,7 +476,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      * Provides help information for the CmsShell.<p>
      */
     public void help() {
-
+        
         System.out.println();
         System.out.println(getMessages().key(Messages.GUI_SHELL_HELP1_0));
         System.out.println(getMessages().key(Messages.GUI_SHELL_HELP2_0));
@@ -439,7 +484,7 @@ public class ModuleCommands implements I_CmsShellCommands {
         System.out.println(getMessages().key(Messages.GUI_SHELL_HELP4_0));
         System.out.println();
     }
-
+    
     protected CmsMessages getMessages() {
         return m_shell.getMessages();
     }
