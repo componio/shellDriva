@@ -17,8 +17,8 @@ import org.opencms.main.I_CmsShellCommands;
 public class CmsShellMain {
 
     /**
-     * prints out how this class should be used with explanation of the different
-     * arguments
+     * prints out how this class should be used with explanation of the
+     * different arguments
      */
     public static void help() {
         System.out.println("Please use for example following Syntax:");
@@ -27,16 +27,17 @@ public class CmsShellMain {
         System.out.println("-webInf \"Path to WebInf folder\" (mandatory)");
         System.out.println("-additional \"package path for class with additional shell commands\"");
         System.out.println("-script \"CmsShell script to be executed\" (mandatory)");
+        System.out.println("-servletmapping \"Mapping of the servlet\" (default is /opencms/*)");
     }
 
     /**
-     * executes a CmsShell script on the opencms system, which was passed as argument
-     * following arguments have to be passed
-     * -webInf "Path to WebInf folder" (mandatory)
-       -additional "package path for class with additional shell commands"
-       -script "CmsShell script to be executed" (mandatory)
+     * executes a CmsShell script on the opencms system, which was passed as
+     * argument following arguments have to be passed -webInf "Path to WebInf
+     * folder" (mandatory) -additional "package path for class with additional
+     * shell commands" -script "CmsShell script to be executed" (mandatory)
+     *
      * @param args
-     * @throws FileNotFoundException 
+     * @throws FileNotFoundException
      */
     public static void main(String[] args) throws FileNotFoundException {
 
@@ -49,11 +50,15 @@ public class CmsShellMain {
         String webInf = "";
         String additionalClass = "";
         String scriptName = "";
+        String servletMapping = "";
         I_CmsShellCommands additionalShellCommands = null;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("-webInf")) {
                 webInf = args[i + 1];
+            }
+            if (args[i].equalsIgnoreCase("-servletmapping")) {
+                servletMapping = args[i + 1];
             }
             if (args[i].equalsIgnoreCase("-script")) {
                 scriptName = args[i + 1];
@@ -83,7 +88,7 @@ public class CmsShellMain {
             }
         }
 
-        CmsShell shell = new CmsShell(webInf, null, null, "${user}@${project}>", additionalShellCommands);
+        CmsShell shell = new CmsShell(webInf, (servletMapping.isEmpty() ? null : servletMapping), null, "${user}@${project}>", additionalShellCommands);
         File script = new File(scriptName);
         FileInputStream stream = new FileInputStream(script);
         shell.start(stream);
