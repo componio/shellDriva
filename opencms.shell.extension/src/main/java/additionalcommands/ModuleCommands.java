@@ -92,7 +92,9 @@ public class ModuleCommands implements I_CmsShellCommands {
         newModule.setExportPoints(new ArrayList<CmsExportPoint>());
         newModule.setResourceTypes(new ArrayList<I_CmsResourceType>());
         newModule.setExplorerTypes(new ArrayList<CmsExplorerTypeSettings>());
-        newModule.setActionClass(actionClass);
+        if (actionClass != null && !actionClass.isEmpty()) {
+            newModule.setActionClass(actionClass);
+        }
         if (!OpenCms.getModuleManager().hasModule(moduleName)) {
             try {
                 createModuleFolders(newModule, m_cms);
