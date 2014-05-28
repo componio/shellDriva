@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import org.apache.commons.logging.Log;
 import org.opencms.configuration.CmsConfigurationException;
 import org.opencms.db.CmsDbEntryNotFoundException;
 import org.opencms.db.CmsExportPoint;
@@ -57,6 +58,7 @@ public class ModuleCommands implements I_CmsShellCommands {
 
     private CmsObject m_cms;
     private CmsShell m_shell;
+    private static final Log LOG = OpenCms.getLog(ModuleCommands.class);
 
     public ModuleCommands() {
     }
@@ -72,9 +74,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      * @throws CmsLockException
      * @throws CmsException
      */
-    public void createNewModule(String moduleName, String version)
-            throws CmsSecurityException, CmsConfigurationException, CmsRoleViolationException,
-            CmsLockException, CmsException {
+    public void createNewModule(String moduleName, String version, String actionClass) {
         CmsModule newModule = new CmsModule();
         newModule.setName(moduleName);
         newModule.setNiceName(moduleName);
@@ -92,13 +92,14 @@ public class ModuleCommands implements I_CmsShellCommands {
         newModule.setExportPoints(new ArrayList<CmsExportPoint>());
         newModule.setResourceTypes(new ArrayList<I_CmsResourceType>());
         newModule.setExplorerTypes(new ArrayList<CmsExplorerTypeSettings>());
-        CmsExplorerTypeSettings set;
+        newModule.setActionClass(actionClass);
         if (!OpenCms.getModuleManager().hasModule(moduleName)) {
-            //OpenCms.getModuleManager().updateModule(m_cms, newModule);
-            //OpenCms.getModuleManager().deleteModule(m_cms, moduleName, false,
-            //new CmsShellReport(m_cms.getRequestContext().getLocale()));
-            createModuleFolders(newModule, m_cms);
-            OpenCms.getModuleManager().addModule(m_cms, newModule);
+            try {
+                createModuleFolders(newModule, m_cms);
+                OpenCms.getModuleManager().addModule(m_cms, newModule);
+            } catch (CmsException ex) {
+                LOG.error("Can't create module", ex);
+            }
         }
     }
 
@@ -114,7 +115,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      *
      * @throws CmsException if somehting goes wrong
      */
-    private void createModuleFolders(CmsModule module, CmsObject cms) throws CmsException {
+    private void createModuleFolders(CmsModule module, CmsObject cms) {
         String modulePath = CmsWorkplace.VFS_PATH_MODULES + module.getName() + "/";
         List<CmsExportPoint> exportPoints = module.getExportPoints();
         //unmodifiable
@@ -134,76 +135,82 @@ public class ModuleCommands implements I_CmsShellCommands {
         // check if we have to create the module folder
         int folderId = CmsResourceTypeFolder.getStaticTypeId();
         int moduleConfigId = 28;
-        if (module.isCreateModuleFolder()) {
-            /**
-             * if (cms.existsResource(modulePath)) {
-             * cms.lockResource(cms.readResource(modulePath));
-             * cms.deleteResource(modulePath,
-             * CmsResource.DELETE_REMOVE_SIBLINGS); }*
-             */
-            cms.createResource(modulePath, folderId);
-            // add the module folder to the resource list
-            resources.add(modulePath);
-            module.setResources(resources);
-        }
+        try {
+            LOG.info("!Start create module folders !");
+            if (module.isCreateModuleFolder()) {
+                /**
+                 * if (cms.existsResource(modulePath)) {
+                 * cms.lockResource(cms.readResource(modulePath));
+                 * cms.deleteResource(modulePath,
+                 * CmsResource.DELETE_REMOVE_SIBLINGS); }*
+                 */
+                cms.createResource(modulePath, folderId);
+                // add the module folder to the resource list
+                resources.add(modulePath);
+                module.setResources(resources);
+            }
 
-        // check if we have to create the template folder
-        if (module.isCreateTemplateFolder()) {
-            String path = modulePath + PATH_TEMPLATES;
-            cms.createResource(path, folderId);
-        }
-
-        // check if we have to create the elements folder
-        if (module.isCreateElementsFolder()) {
-            String path = modulePath + PATH_ELEMENTS;
-            cms.createResource(path, folderId);
-        }
-
-        if (module.isCreateFormattersFolder()) {
-            String path = modulePath + PATH_FORMATTERS;
-            cms.createResource(path, folderId);
-        }
-
-        // check if we have to create the schemas folder
-        if (module.isCreateSchemasFolder()) {
-            String path = modulePath + PATH_SCHEMAS;
-            cms.createResource(path, folderId);
-        }
-
-        // check if we have to create the resources folder
-        if (module.isCreateTemplateFolder()) {
-            String path = modulePath + PATH_RESOURCES;
-            cms.createResource(path, folderId);
-        }
-
-        // check if we have to create the lib folder
-        if (module.isCreateLibFolder()) {
-            String path = modulePath + PATH_LIB;
-            cms.createResource(path, folderId);
-            CmsExportPoint exp = new CmsExportPoint(path, "WEB-INF/lib/");
-            exportPoints.add(exp);
-            module.setExportPoints(exportPoints);
-        }
-
-        // check if we have to create the classes folder
-        if (module.isCreateClassesFolder()) {
-            String path = modulePath + PATH_CLASSES;
-            cms.createResource(path, folderId);
-            CmsExportPoint exp = new CmsExportPoint(path, "WEB-INF/classes/");
-            exportPoints.add(exp);
-            module.setExportPoints(exportPoints);
-
-            // now create all subfolders for the package structure
-            StringTokenizer tok = new StringTokenizer(module.getName(), ".");
-            while (tok.hasMoreTokens()) {
-                String folder = tok.nextToken();
-                path += folder + "/";
+            // check if we have to create the template folder
+            if (module.isCreateTemplateFolder()) {
+                String path = modulePath + PATH_TEMPLATES;
                 cms.createResource(path, folderId);
             }
+
+            // check if we have to create the elements folder
+            if (module.isCreateElementsFolder()) {
+                String path = modulePath + PATH_ELEMENTS;
+                cms.createResource(path, folderId);
+            }
+
+            if (module.isCreateFormattersFolder()) {
+                String path = modulePath + PATH_FORMATTERS;
+                cms.createResource(path, folderId);
+            }
+
+            // check if we have to create the schemas folder
+            if (module.isCreateSchemasFolder()) {
+                String path = modulePath + PATH_SCHEMAS;
+                cms.createResource(path, folderId);
+            }
+
+            // check if we have to create the resources folder
+            if (module.isCreateTemplateFolder()) {
+                String path = modulePath + PATH_RESOURCES;
+                cms.createResource(path, folderId);
+            }
+
+            // check if we have to create the lib folder
+            if (module.isCreateLibFolder()) {
+                String path = modulePath + PATH_LIB;
+                cms.createResource(path, folderId);
+                CmsExportPoint exp = new CmsExportPoint(path, "WEB-INF/lib/");
+                exportPoints.add(exp);
+                module.setExportPoints(exportPoints);
+            }
+
+            // check if we have to create the classes folder
+            if (module.isCreateClassesFolder()) {
+                String path = modulePath + PATH_CLASSES;
+                cms.createResource(path, folderId);
+                CmsExportPoint exp = new CmsExportPoint(path, "WEB-INF/classes/");
+                exportPoints.add(exp);
+                module.setExportPoints(exportPoints);
+
+                // now create all subfolders for the package structure
+                StringTokenizer tok = new StringTokenizer(module.getName(), ".");
+                while (tok.hasMoreTokens()) {
+                    String folder = tok.nextToken();
+                    path += folder + "/";
+                    cms.createResource(path, folderId);
+                }
+            }
+            //create .config from type module_config
+            String configFile = modulePath + ".config";
+            cms.createResource(configFile, moduleConfigId);
+            LOG.info("!End create module folders !");
+        } catch (CmsException ex) {
+            LOG.error("Error durinbg creation of Resources: ", ex);
         }
-        //create .config from type module_config
-        String configFile = modulePath + ".config";
-        cms.createResource(configFile, moduleConfigId);
     }
 
     /**
@@ -423,6 +430,7 @@ public class ModuleCommands implements I_CmsShellCommands {
 
     /**
      * Exports a Resource from the Virtual File System
+     *
      * @param vfsResource
      * @param targetPath
      * @param contentAge export only resources after that age(lower bound)
@@ -437,21 +445,21 @@ public class ModuleCommands implements I_CmsShellCommands {
      * @param xmlValidation
      * @throws CmsConfigurationException
      * @throws CmsImportExportException
-     * @throws CmsRoleViolationException 
+     * @throws CmsRoleViolationException
      */
-    public void exportVFSResource(String vfsResource, String targetPath, long contentAge,
+    public void exportVFSResource(String vfsResource, String targetPath,
             boolean exportAccountData, boolean exportAsFiles, boolean exportProjectData,
             boolean exportResourceData, boolean exportOnlyFilesForCurrentProject,
             boolean includeSystemFolder, boolean includeUnchangedResources,
             boolean recursive, boolean xmlValidation)
             throws CmsConfigurationException,
             CmsImportExportException,
-            CmsRoleViolationException {
+            CmsRoleViolationException,
+            CmsException {
 
         CmsVfsImportExportHandler exportHandler = new CmsVfsImportExportHandler();
 
         CmsExportParameters exportParameters = new CmsExportParameters();
-        exportParameters.setContentAge(contentAge);
         exportParameters.setExportAccountData(exportAccountData);
         exportParameters.setExportAsFiles(exportAsFiles);
         exportParameters.setExportProjectData(exportProjectData);
@@ -463,10 +471,9 @@ public class ModuleCommands implements I_CmsShellCommands {
         exportParameters.setRecursive(recursive);
         exportParameters.setXmlValidation(xmlValidation);
 
+        //Get resources in a specific time range (last modified)
         List<String> resources = new ArrayList<String>();
-        resources.add(vfsResource);
         exportParameters.setResources(resources);
-
         exportHandler.setExportParams(exportParameters);
         OpenCms.getImportExportManager().exportData(m_cms, exportHandler,
                 new CmsShellReport(m_cms.getRequestContext().getLocale()));
@@ -531,7 +538,6 @@ public class ModuleCommands implements I_CmsShellCommands {
      * Provides help information for the CmsShell.<p>
      */
     public void help() {
-
         System.out.println();
         System.out.println(getMessages().key(Messages.GUI_SHELL_HELP1_0));
         System.out.println(getMessages().key(Messages.GUI_SHELL_HELP2_0));
