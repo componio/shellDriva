@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.opencms.file.CmsObject;
 import org.opencms.file.CmsResource;
 import org.opencms.file.CmsUser;
 import org.opencms.file.types.CmsResourceTypeFolder;
+import org.opencms.file.types.CmsResourceTypeImage;
 import org.opencms.file.types.CmsResourceTypeJsp;
 import org.opencms.file.types.CmsResourceTypePlain;
 import org.opencms.file.types.CmsResourceTypeXmlContent;
@@ -61,7 +63,6 @@ import static projectconstants.ProjectConstants.SAMPLE_SCHEMA_TYPE_NAME;
  */
 public class CmsNewResourceTypeProcedure {
 
-   
     /**
      * Copies the sample formatter JSP, creates the associated formatter and
      * module configuration.<p>
@@ -78,43 +79,42 @@ public class CmsNewResourceTypeProcedure {
      * @throws CmsException in case something goes wrong copying the resources
      * @throws java.io.UnsupportedEncodingException
      */
-    public static void createSampleFiles(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException {
+    public static void createSampleFiles(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String iconPath) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         OpenCmsVersion version = OpenCmsVersion.getEnum(cmsVersion);
         switch (version) {
             case V850:
-                copyFiles_8x(isSchema, module, cmsVersion, m_cms, moduleFolder, m_resInfo);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
             case V851:
-                copyFiles_8x(isSchema, module, cmsVersion, m_cms, moduleFolder, m_resInfo);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
             case V852:
-                copyFiles_8x(isSchema, module, cmsVersion, m_cms, moduleFolder, m_resInfo);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
             case V901:
-                copyFiles_9x(isSchema, module, cmsVersion, m_cms, moduleFolder, m_resInfo);
+                copyFiles_9x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
             case V950:
-                copyFiles_9x(isSchema, module, cmsVersion, m_cms, moduleFolder, m_resInfo);
+                copyFiles_9x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
             default:
                 break;
         }
-
     }
 
-    private static void copyFiles_8x(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException {
+    private static void copyFiles_8x(boolean isSchema, CmsModule module, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String iconPath) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         if (isSchema) {
-            copySampleSchemaFiles_8x(m_cms, module, moduleFolder, m_resInfo);
+            copySampleSchemaFiles_8x(m_cms, module, moduleFolder, m_resInfo, iconPath);
         } else {
             createSampleFormatterFiles_8x(m_cms, moduleFolder, m_resInfo);
         }
     }
 
-    private static void copyFiles_9x(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException {
+    private static void copyFiles_9x(boolean isSchema, CmsModule module, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String iconPath) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         if (isSchema) {
-            copySampleSchemaFiles_9x(m_cms, module, moduleFolder, m_resInfo);
+            copySampleSchemaFiles_9x(m_cms, module, moduleFolder, m_resInfo, iconPath);
         } else {
-            createSampleFormatterFiles_9x(m_cms, moduleFolder, m_resInfo);
+            createSampleFormatter_9x(m_cms, moduleFolder, m_resInfo);
         }
     }
 
@@ -129,10 +129,6 @@ public class CmsNewResourceTypeProcedure {
             m_cms.createResource(formatterJSP, CmsResourceTypeJsp.getJSPTypeId());
         }
         updateModuleConfig(m_cms, moduleFolder, m_resInfo);
-    }
-
-    public static void createSampleFormatterFiles_9x(CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo) throws CmsIllegalArgumentException, CmsException {
-        createSampleFormatter_9x(m_cms, moduleFolder, m_resInfo);
     }
 
     public static void createSampleFormatter_9x(CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo) throws CmsIllegalArgumentException, CmsException {
@@ -383,6 +379,23 @@ public class CmsNewResourceTypeProcedure {
         return setting;
     }
 
+    private static boolean createImage(String vfs_path, String iconPath, int width, int height, String img_type, CmsObject m_cms) throws IOException, CmsException {
+        String resized_img_path = IconRenderer.renderIcon(iconPath, width, height, img_type);
+        if (resized_img_path != null) {
+            File res_file = new File(resized_img_path);
+            if (res_file.exists()) {
+                byte[] content = Files.readAllBytes(res_file.toPath());
+                m_cms.createResource(vfs_path, CmsResourceTypeImage.getStaticTypeId());
+                CmsFile resized = m_cms.readFile(vfs_path);
+                resized.setContents(content);
+                m_cms.writeFile(resized);
+                res_file.delete();
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Copies sample schema and resource type icons and adds the resources to
      * the module.<p>
@@ -397,8 +410,8 @@ public class CmsNewResourceTypeProcedure {
      * @throws CmsException in case something goes wrong copying the resources
      * @throws java.io.UnsupportedEncodingException
      */
-    public static void copySampleSchemaFiles_9x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo)
-            throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException {
+    public static void copySampleSchemaFiles_9x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String iconPath)
+            throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         List<String> moduleResource = new ArrayList<String>(module.getResources());
         if (!m_cms.existsResource(moduleFolder)) {
             m_cms.createResource(moduleFolder, CmsResourceTypeFolder.getStaticTypeId());
@@ -426,15 +439,34 @@ public class CmsNewResourceTypeProcedure {
         m_resInfo.setSchema(schemaFile);
         String filetypesFolder = "/system/workplace/resources/filetypes/";
         String smallIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + ".png");
+        boolean addIcon = false;
         if (!m_cms.existsResource(smallIcon)) {
-            m_cms.copyResource(SAMPLE_ICON_SMALL, smallIcon, CmsResource.COPY_AS_NEW);
-            moduleResource.add(smallIcon);
+            if (iconPath == null || iconPath.isEmpty()) {
+                m_cms.copyResource(SAMPLE_ICON_SMALL, smallIcon, CmsResource.COPY_AS_NEW);
+                addIcon = true;
+            } else {
+                addIcon = createImage(smallIcon, iconPath, 16, 16, "png", m_cms);
+            }
+            if (addIcon) {
+                moduleResource.add(smallIcon);
+
+            }
         }
+
         m_resInfo.setSmallIcon(m_resInfo.getName() + ".png");
+
         String bigIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + "_big.png");
+        addIcon = false;
         if (!m_cms.existsResource(bigIcon)) {
-            m_cms.copyResource(SAMPLE_ICON_BIG, bigIcon, CmsResource.COPY_AS_NEW);
-            moduleResource.add(bigIcon);
+            if (iconPath == null || iconPath.isEmpty()) {
+                m_cms.copyResource(SAMPLE_ICON_BIG, bigIcon, CmsResource.COPY_AS_NEW);
+                addIcon = true;
+            } else {
+                addIcon = createImage(bigIcon, iconPath, 24, 24, "png", m_cms);
+            }
+            if (addIcon) {
+                moduleResource.add(bigIcon);
+            }
         }
         m_resInfo.setBigIcon(m_resInfo.getName() + "_big.png");
         module.setResources(moduleResource);
@@ -454,8 +486,8 @@ public class CmsNewResourceTypeProcedure {
      * @throws CmsException in case something goes wrong copying the resources
      * @throws java.io.UnsupportedEncodingException
      */
-    public static void copySampleSchemaFiles_8x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo)
-            throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException {
+    public static void copySampleSchemaFiles_8x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String iconPath)
+            throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         List<String> moduleResource = new ArrayList<String>(module.getResources());
         if (!m_cms.existsResource(moduleFolder)) {
             m_cms.createResource(moduleFolder, CmsResourceTypeFolder.getStaticTypeId());
@@ -471,6 +503,28 @@ public class CmsNewResourceTypeProcedure {
             m_cms.createResource(schemaFile, CmsResourceTypePlain.getStaticTypeId());
         }
         m_resInfo.setSchema(schemaFile);
+
+        String filetypesFolder = "/system/workplace/resources/filetypes/";
+        String smallIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + ".png");
+        if (!m_cms.existsResource(smallIcon)) {
+            if (iconPath != null && !iconPath.isEmpty()) {
+                boolean addIcon = createImage(smallIcon, iconPath, 16, 16, "png", m_cms);
+                if (addIcon) {
+                    moduleResource.add(smallIcon);
+                    m_resInfo.setSmallIcon(m_resInfo.getName() + ".png");
+                }
+            }
+        }
+        String bigIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + "_big.png");
+        if (!m_cms.existsResource(bigIcon)) {
+            if (iconPath != null || iconPath.isEmpty()) {
+                boolean addIcon = createImage(bigIcon, iconPath, 24, 24, "png", m_cms);
+                if (addIcon) {
+                    moduleResource.add(bigIcon);
+                    m_resInfo.setBigIcon(m_resInfo.getName() + "_big.png");
+                }
+            }
+        }
         module.setResources(moduleResource);
     }
 
