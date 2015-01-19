@@ -20,12 +20,12 @@
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-core</artifactId>
-            <version>9.5.0</version>
+            <version>9.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-setup</artifactId>
-            <version>9.5.0</version>
+            <version>9.0.1</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
