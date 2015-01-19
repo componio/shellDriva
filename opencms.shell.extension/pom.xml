@@ -4,7 +4,7 @@
 
     <groupId>net.componio</groupId>
     <artifactId>opencms.shell.extension</artifactId>
-    <version>0.9.3</version>
+    <version>0.9.4_85x</version>
     <packaging>jar</packaging>
 
     <name>opencms.shell.extension</name>
