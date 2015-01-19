@@ -11,13 +11,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import org.dom4j.Element;
 import org.opencms.ade.configuration.CmsADEManager;
 import org.opencms.ade.configuration.CmsConfigurationReader;
 import org.opencms.configuration.CmsConfigurationException;
@@ -26,10 +23,10 @@ import org.opencms.file.CmsObject;
 import org.opencms.file.CmsResource;
 import org.opencms.file.CmsUser;
 import org.opencms.file.types.CmsResourceTypeFolder;
+import org.opencms.file.types.CmsResourceTypeImage;
 import org.opencms.file.types.CmsResourceTypeJsp;
 import org.opencms.file.types.CmsResourceTypePlain;
 import org.opencms.file.types.CmsResourceTypeXmlContent;
-import org.opencms.i18n.CmsLocaleManager;
 import org.opencms.lock.CmsLock;
 import org.opencms.main.CmsException;
 import org.opencms.main.CmsIllegalArgumentException;
@@ -47,10 +44,6 @@ import static projectconstants.ProjectConstants.KEY_PREFIX_TITLE;
 import static projectconstants.ProjectConstants.PATH_I18N;
 import static projectconstants.ProjectConstants.PROPERTIES_ENCODING;
 import static projectconstants.ProjectConstants.PROPERTIES_FILE_NAME;
-import static projectconstants.ProjectConstants.SAMPLE_FORMATTER;
-import static projectconstants.ProjectConstants.SAMPLE_ICON_BIG;
-import static projectconstants.ProjectConstants.SAMPLE_ICON_SMALL;
-import static projectconstants.ProjectConstants.SAMPLE_SCHEMA;
 import static projectconstants.ProjectConstants.SAMPLE_SCHEMA_TYPE_NAME;
 
 /**
@@ -75,17 +68,17 @@ public class CmsNewResourceTypeProcedure {
      * @throws CmsException in case something goes wrong copying the resources
      * @throws java.io.UnsupportedEncodingException
      */
-    public static void createSampleFiles(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
+    public static void createSampleFiles(boolean isSchema, CmsModule module, String cmsVersion, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir, String iconPath) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         OpenCmsVersion version = OpenCmsVersion.getEnum(cmsVersion);
         switch (version) {
             case V850:
-                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir, iconPath);
                 break;
             case V851:
-                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir, iconPath);
                 break;
             case V852:
-                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir);
+                copyFiles_8x(isSchema, module, m_cms, moduleFolder, m_resInfo, ide_project_dir, iconPath);
                 break;
             default:
                 break;
@@ -93,9 +86,9 @@ public class CmsNewResourceTypeProcedure {
 
     }
 
-    private static void copyFiles_8x(boolean isSchema, CmsModule module, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
+    private static void copyFiles_8x(boolean isSchema, CmsModule module, CmsObject m_cms, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir, String iconPath) throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         if (isSchema) {
-            copySampleSchemaFiles_8x(m_cms, module, moduleFolder, m_resInfo, ide_project_dir);
+            copySampleSchemaFiles_8x(m_cms, module, moduleFolder, m_resInfo, ide_project_dir, iconPath);
         } else {
             createSampleFormatterFiles_8x(m_cms, moduleFolder, m_resInfo);
         }
@@ -135,6 +128,23 @@ public class CmsNewResourceTypeProcedure {
         typeValue.setStringValue(m_cms, m_resInfo.getName());
         moduleConfigFile.setContents(moduleConfigContent.marshal());
         m_cms.writeFile(moduleConfigFile);
+    }
+
+    private static boolean createImage(String vfs_path, String iconPath, int width, int height, String img_type, CmsObject m_cms) throws IOException, CmsException {
+        String resized_img_path = IconRenderer.renderIcon(iconPath, width, height, img_type);
+        if (resized_img_path != null) {
+            File res_file = new File(resized_img_path);
+            if (res_file.exists()) {
+                byte[] content = Files.readAllBytes(res_file.toPath());
+                m_cms.createResource(vfs_path, CmsResourceTypeImage.getStaticTypeId());
+                CmsFile resized = m_cms.readFile(vfs_path);
+                resized.setContents(content);
+                m_cms.writeFile(resized);
+                res_file.delete();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -267,7 +277,7 @@ public class CmsNewResourceTypeProcedure {
      * @throws CmsException in case something goes wrong copying the resources
      * @throws java.io.UnsupportedEncodingException
      */
-    public static void copySampleSchemaFiles_8x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir)
+    public static void copySampleSchemaFiles_8x(CmsObject m_cms, CmsModule module, String moduleFolder, CmsResourceTypeInfoBean m_resInfo, String ide_project_dir, String iconPath)
             throws CmsIllegalArgumentException, CmsException, UnsupportedEncodingException, IOException {
         List<String> moduleResource = new ArrayList<String>(module.getResources());
         if (!m_cms.existsResource(moduleFolder)) {
@@ -297,6 +307,27 @@ public class CmsNewResourceTypeProcedure {
             }
         }
         m_resInfo.setSchema(schemaFile);
+        String filetypesFolder = "/system/workplace/resources/filetypes/";
+        String smallIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + ".png");
+        if (!m_cms.existsResource(smallIcon)) {
+            if (iconPath != null && !iconPath.isEmpty()) {
+                boolean addIcon = createImage(smallIcon, iconPath, 16, 16, "png", m_cms);
+                if (addIcon) {
+                    moduleResource.add(smallIcon);
+                    m_resInfo.setSmallIcon(m_resInfo.getName() + ".png");
+                }
+            }
+        }
+        String bigIcon = CmsStringUtil.joinPaths(filetypesFolder, m_resInfo.getName() + "_big.png");
+        if (!m_cms.existsResource(bigIcon)) {
+            if (iconPath != null || iconPath.isEmpty()) {
+                boolean addIcon = createImage(bigIcon, iconPath, 24, 24, "png", m_cms);
+                if (addIcon) {
+                    moduleResource.add(bigIcon);
+                    m_resInfo.setBigIcon(m_resInfo.getName() + "_big.png");
+                }
+            }
+        }
         module.setResources(moduleResource);
     }
 

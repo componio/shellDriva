@@ -227,7 +227,8 @@ public class ModuleCommands implements I_CmsShellCommands {
             String title,
             String description,
             String schematypeName,
-            String ide_project)
+            String ide_project,
+            String iconPath)
             throws CmsException, CmsIllegalArgumentException, UnsupportedEncodingException, IOException {
         CmsProject currentProject = m_cms.getRequestContext().getCurrentProject();
         if (!OpenCms.getResourceManager().hasResourceType(Integer.parseInt(id))
@@ -250,7 +251,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             m_cms.getRequestContext().setCurrentProject(workProject);
             CmsModule module = (CmsModule) OpenCms.getModuleManager().getModule(modulename).clone();
             String moduleFolder = CmsStringUtil.joinPaths("/system/modules/", modulename);
-            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo,ide_project);
+            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo,ide_project,iconPath);
             List<I_CmsResourceType> types = new ArrayList<I_CmsResourceType>(module.getResourceTypes());
 
             // create the new resource type
@@ -264,7 +265,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             CmsNewResourceTypeProcedure.addTypeMessages(m_cms, setting, moduleFolder, m_resInfo);
             settings.add(setting);
             module.setExplorerTypes(settings);
-            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, ide_project);
+            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, ide_project,iconPath);
             // now unlock and publish the project
             System.out.println(org.opencms.module.Messages.get().container(org.opencms.module.Messages.RPT_PUBLISH_PROJECT_BEGIN_0));
 
