@@ -24,7 +24,6 @@ import org.opencms.db.CmsExportPoint;
 import org.opencms.file.CmsObject;
 import org.opencms.file.CmsProject;
 import org.opencms.file.types.CmsResourceTypeFolder;
-import org.opencms.file.types.CmsResourceTypeXmlContent;
 import org.opencms.file.types.I_CmsResourceType;
 import org.opencms.i18n.CmsMessages;
 import org.opencms.importexport.CmsExportParameters;
@@ -227,7 +226,9 @@ public class ModuleCommands implements I_CmsShellCommands {
             String title,
             String description,
             String schematypeName,
-            String ide_project)
+            String ide_project,
+            String iconPath
+    )
             throws CmsException, CmsIllegalArgumentException, UnsupportedEncodingException, IOException {
         CmsProject currentProject = m_cms.getRequestContext().getCurrentProject();
         if (!OpenCms.getResourceManager().hasResourceType(Integer.parseInt(id))
@@ -250,9 +251,10 @@ public class ModuleCommands implements I_CmsShellCommands {
             m_cms.getRequestContext().setCurrentProject(workProject);
             CmsModule module = (CmsModule) OpenCms.getModuleManager().getModule(modulename).clone();
             String moduleFolder = CmsStringUtil.joinPaths("/system/modules/", modulename);
-            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo);
-            List<I_CmsResourceType> types = new ArrayList<I_CmsResourceType>(module.getResourceTypes());
 
+            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, iconPath);
+
+            List<I_CmsResourceType> types = new ArrayList<I_CmsResourceType>(module.getResourceTypes());
             // create the new resource type
             types.add(CmsNewResourceTypeProcedure.getSchemaResourceXmlContent(m_resInfo));
             module.setResourceTypes(types);
@@ -264,7 +266,9 @@ public class ModuleCommands implements I_CmsShellCommands {
             CmsNewResourceTypeProcedure.addTypeMessages(m_cms, setting, moduleFolder, m_resInfo);
             settings.add(setting);
             module.setExplorerTypes(settings);
-            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo);
+
+            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, iconPath);
+
             // now unlock and publish the project
             System.out.println(org.opencms.module.Messages.get().container(org.opencms.module.Messages.RPT_PUBLISH_PROJECT_BEGIN_0));
 
