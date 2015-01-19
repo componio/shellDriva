@@ -250,7 +250,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             m_cms.getRequestContext().setCurrentProject(workProject);
             CmsModule module = (CmsModule) OpenCms.getModuleManager().getModule(modulename).clone();
             String moduleFolder = CmsStringUtil.joinPaths("/system/modules/", modulename);
-            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo);
+            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo,ide_project);
             List<I_CmsResourceType> types = new ArrayList<I_CmsResourceType>(module.getResourceTypes());
 
             // create the new resource type
@@ -264,7 +264,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             CmsNewResourceTypeProcedure.addTypeMessages(m_cms, setting, moduleFolder, m_resInfo);
             settings.add(setting);
             module.setExplorerTypes(settings);
-            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo);
+            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, ide_project);
             // now unlock and publish the project
             System.out.println(org.opencms.module.Messages.get().container(org.opencms.module.Messages.RPT_PUBLISH_PROJECT_BEGIN_0));
 

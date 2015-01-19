@@ -89,10 +89,6 @@ public class CmsShellMain {
                 System.exit(1);
             }
         }
-         /**workaround for OpenCms 9.5.0 because of NullpointerException
-         * see: https://github.com/alkacon/opencms-core/issues/288
-         */
-        CmsLog.INIT = LogFactory.getLog("org.opencms.init");
         
         CmsShell shell = new CmsShell(webInf, (servletMapping.isEmpty() ? null : servletMapping), null, "${user}@${project}>", additionalShellCommands);
         File script = new File(scriptName);
