@@ -4,20 +4,25 @@
  */
 package additionalcommands;
 
+import resourcetypes.CmsResourceTypeInfoBean;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
+import org.opencms.ade.configuration.CmsADEManager;
 import org.opencms.configuration.CmsConfigurationException;
 import org.opencms.db.CmsDbEntryNotFoundException;
 import org.opencms.db.CmsExportPoint;
 import org.opencms.file.CmsObject;
+import org.opencms.file.CmsProject;
 import org.opencms.file.types.CmsResourceTypeFolder;
 import org.opencms.file.types.I_CmsResourceType;
 import org.opencms.i18n.CmsMessages;
@@ -25,10 +30,12 @@ import org.opencms.importexport.CmsExportParameters;
 import org.opencms.importexport.CmsImportExportException;
 import org.opencms.importexport.CmsImportParameters;
 import org.opencms.importexport.CmsVfsImportExportHandler;
-import org.opencms.lock.CmsLockException;
+import org.opencms.main.CmsEvent;
 import org.opencms.main.CmsException;
+import org.opencms.main.CmsIllegalArgumentException;
 import org.opencms.main.CmsShell;
 import org.opencms.main.CmsSystemInfo;
+import org.opencms.main.I_CmsEventListener;
 import org.opencms.main.I_CmsShellCommands;
 import org.opencms.main.Messages;
 import org.opencms.main.OpenCms;
@@ -36,10 +43,10 @@ import org.opencms.module.CmsModule;
 import org.opencms.module.CmsModuleImportExportHandler;
 import org.opencms.report.CmsShellReport;
 import org.opencms.security.CmsRoleViolationException;
-import org.opencms.security.CmsSecurityException;
 import org.opencms.synchronize.CmsSynchronize;
 import org.opencms.synchronize.CmsSynchronizeException;
 import org.opencms.synchronize.CmsSynchronizeSettings;
+import org.opencms.util.CmsStringUtil;
 import org.opencms.workplace.CmsWorkplace;
 import org.opencms.workplace.explorer.CmsExplorerTypeSettings;
 import static projectconstants.ProjectConstants.PATH_CLASSES;
@@ -49,6 +56,7 @@ import static projectconstants.ProjectConstants.PATH_LIB;
 import static projectconstants.ProjectConstants.PATH_RESOURCES;
 import static projectconstants.ProjectConstants.PATH_SCHEMAS;
 import static projectconstants.ProjectConstants.PATH_TEMPLATES;
+import resourcetypes.CmsNewResourceTypeProcedure;
 
 /**
  *
@@ -68,11 +76,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      *
      * @param moduleName
      * @param version
-     * @throws CmsSecurityException
-     * @throws CmsConfigurationException
-     * @throws CmsRoleViolationException
-     * @throws CmsLockException
-     * @throws CmsException
+     * @param actionClass
      */
     public void createNewModule(String moduleName, String version, String actionClass) {
         CmsModule newModule = new CmsModule();
@@ -136,7 +140,6 @@ public class ModuleCommands implements I_CmsShellCommands {
 
         // check if we have to create the module folder
         int folderId = CmsResourceTypeFolder.getStaticTypeId();
-        int moduleConfigId = 28;
         try {
             LOG.info("!Start create module folders !");
             if (module.isCreateModuleFolder()) {
@@ -208,10 +211,87 @@ public class ModuleCommands implements I_CmsShellCommands {
             }
             //create .config from type module_config
             String configFile = modulePath + ".config";
-            cms.createResource(configFile, moduleConfigId);
+            cms.createResource(configFile, OpenCms.getResourceManager().getResourceType(CmsADEManager.MODULE_CONFIG_TYPE).getTypeId());
             LOG.info("!End create module folders !");
         } catch (CmsException ex) {
             LOG.error("Error durinbg creation of Resources: ", ex);
+        }
+    }
+
+    public void createNewResourceType(
+            String modulename,
+            String id,
+            String resourceTypeName,
+            String nicename,
+            String title,
+            String description,
+            String schematypeName,
+            String ide_project,
+            String iconPath
+    )
+            throws CmsException, CmsIllegalArgumentException, UnsupportedEncodingException, IOException {
+        CmsProject currentProject = m_cms.getRequestContext().getCurrentProject();
+        if (!OpenCms.getResourceManager().hasResourceType(Integer.parseInt(id))
+                && !OpenCms.getResourceManager().hasResourceType(resourceTypeName)) {
+            CmsResourceTypeInfoBean m_resInfo = new CmsResourceTypeInfoBean();
+            m_resInfo.setModuleName(modulename);
+            m_resInfo.setId(Integer.parseInt(id));
+            m_resInfo.setName(resourceTypeName);
+            m_resInfo.setNiceName(nicename);
+            m_resInfo.setTitle(title);
+            m_resInfo.setDescription(description);
+            m_resInfo.setSchemaTypeName(schematypeName);
+
+            CmsProject workProject = m_cms.createProject(
+                    "Add_resource_type_project",
+                    "Add resource type project",
+                    OpenCms.getDefaultUsers().getGroupAdministrators(),
+                    OpenCms.getDefaultUsers().getGroupAdministrators(),
+                    CmsProject.PROJECT_TYPE_TEMPORARY);
+            m_cms.getRequestContext().setCurrentProject(workProject);
+            CmsModule module = (CmsModule) OpenCms.getModuleManager().getModule(modulename).clone();
+            String moduleFolder = CmsStringUtil.joinPaths("/system/modules/", modulename);
+
+            CmsNewResourceTypeProcedure.createSampleFiles(true, module, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, iconPath);
+
+            List<I_CmsResourceType> types = new ArrayList<I_CmsResourceType>(module.getResourceTypes());
+            // create the new resource type
+            types.add(CmsNewResourceTypeProcedure.getSchemaResourceXmlContent(m_resInfo));
+            module.setResourceTypes(types);
+
+            List<CmsExplorerTypeSettings> settings = new ArrayList<CmsExplorerTypeSettings>(module.getExplorerTypes());
+
+            CmsExplorerTypeSettings setting = CmsNewResourceTypeProcedure.getResourceExplorerTypeSettings(m_resInfo);
+            // create the matching explorer type
+            CmsNewResourceTypeProcedure.addTypeMessages(m_cms, setting, moduleFolder, m_resInfo);
+            settings.add(setting);
+            module.setExplorerTypes(settings);
+
+            CmsNewResourceTypeProcedure.createSampleFiles(false, null, OpenCms.getSystemInfo().getVersionNumber(), m_cms, moduleFolder, m_resInfo, iconPath);
+
+            // now unlock and publish the project
+            System.out.println(org.opencms.module.Messages.get().container(org.opencms.module.Messages.RPT_PUBLISH_PROJECT_BEGIN_0));
+
+            m_cms.unlockProject(workProject.getUuid());
+            OpenCms.getPublishManager().publishProject(m_cms, new CmsShellReport(m_cms.getRequestContext().getLocale()));
+            OpenCms.getPublishManager().waitWhileRunning();
+
+            System.out.println(
+                    org.opencms.module.Messages.get().container(org.opencms.module.Messages.RPT_PUBLISH_PROJECT_END_0));
+
+            // write the module configuration, init resource types, explorer types and clear OpenCms caches
+            OpenCms.getModuleManager().updateModule(m_cms, module);
+            OpenCms.getResourceManager().initialize(m_cms);
+            OpenCms.getWorkplaceManager().addExplorerTypeSettings(module);
+            OpenCms.fireCmsEvent(new CmsEvent(
+                    I_CmsEventListener.EVENT_CLEAR_CACHES,
+                    Collections.<String, Object>emptyMap()));
+            // re-initialize the workplace
+            OpenCms.getWorkplaceManager().initialize(m_cms);
+            m_cms.getRequestContext().setCurrentProject(currentProject);
+            CmsNewResourceTypeProcedure.copyFilesToIde(ide_project, m_cms, moduleFolder, m_resInfo);
+        } else {
+            System.out.println("Resource Type: " + "(" + id + "," + resourceTypeName + ")" + " already exists");
         }
     }
 
@@ -235,7 +315,7 @@ public class ModuleCommands implements I_CmsShellCommands {
             sourceList.add(vfsFolder);
             syncSettings.setSourceListInVfs(sourceList);
             syncSettings.setEnabled(true);
-            new CmsSynchronize(m_cms, syncSettings, new CmsShellReport(m_cms.getRequestContext().getLocale()));
+            CmsSynchronize cmsSynchronize = new CmsSynchronize(m_cms, syncSettings, new CmsShellReport(m_cms.getRequestContext().getLocale()));
         } else {
             if (!rfsDir.exists()) {
                 System.out.println("Folder " + rfsFolder + "in Remote File System doesn't exist");
@@ -250,7 +330,7 @@ public class ModuleCommands implements I_CmsShellCommands {
     }
 
     private void syncRFSandVFSWithSettings(CmsSynchronizeSettings settings) throws CmsSynchronizeException, CmsException {
-        new CmsSynchronize(m_cms, settings, new CmsShellReport(m_cms.getRequestContext().getLocale()));
+        CmsSynchronize cmsSynchronize = new CmsSynchronize(m_cms, settings, new CmsShellReport(m_cms.getRequestContext().getLocale()));
     }
 
     /**
@@ -288,7 +368,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      * separated with a ","
      *
      * @param rfsFolder
-     * @param vfsFolder
+     * @param vfsFolders
      * @param exclusionFile
      * @throws CmsSynchronizeException
      * @throws CmsException
@@ -300,7 +380,7 @@ public class ModuleCommands implements I_CmsShellCommands {
         File rfsDir = new File(rfsFolder);
         if (new File(exclusionFile).exists()) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(exclusionFile))));
-            String exclusionPattern = "";
+            String exclusionPattern;
             while ((exclusionPattern = reader.readLine()) != null) {
                 OpenCms.getWorkplaceManager().addSynchronizeExcludePattern(exclusionPattern);
             }
@@ -323,7 +403,7 @@ public class ModuleCommands implements I_CmsShellCommands {
     /**
      * publishes resources, resourcenames are separated with a ","
      *
-     * @param resourcename
+     * @param resourcenames
      * @param siblings
      * @throws Exception
      */
@@ -392,6 +472,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      * modifies the version number of the module
      *
      * @param moduleName the name of the module to export
+     * @param version
      * @throws Exception if something goes wrong * copied from
      * https://github.com/alkacon/opencms-core/blob/build_8_5_2/src/org/opencms/main/CmsShellCommands.java
      */
@@ -435,7 +516,6 @@ public class ModuleCommands implements I_CmsShellCommands {
      *
      * @param vfsResource
      * @param targetPath
-     * @param contentAge export only resources after that age(lower bound)
      * @param exportAccountData
      * @param exportAsFiles exports resource as ZIP if set to false
      * @param exportProjectData
@@ -531,8 +611,8 @@ public class ModuleCommands implements I_CmsShellCommands {
      */
     public void copyright() {
         String[] copy = Messages.COPYRIGHT_BY_ALKACON;
-        for (int i = 0; i < copy.length; i++) {
-            System.out.println(copy[i]);
+        for (String c : copy) {
+            System.out.println(c);
         }
     }
 
