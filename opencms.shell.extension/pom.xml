@@ -13,19 +13,19 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--maven variable which points to your local repository -->
-        <internal.repo.path>file:///C:/Users/Tom/Documents/GitHub/shellDriva/lib-repo/</internal.repo.path>
+        <internal.repo.path>file:///C:/Users/Tom/Desktop/GitHub/shellDriva/lib-repo/</internal.repo.path>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-core</artifactId>
-            <version>9.5.0</version>
+            <version>9.5.2</version>
         </dependency>
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-setup</artifactId>
-            <version>9.5.0</version>
+            <version>9.5.2</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>

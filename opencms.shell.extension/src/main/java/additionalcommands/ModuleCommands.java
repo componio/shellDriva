@@ -57,6 +57,7 @@ import static projectconstants.ProjectConstants.PATH_RESOURCES;
 import static projectconstants.ProjectConstants.PATH_SCHEMAS;
 import static projectconstants.ProjectConstants.PATH_TEMPLATES;
 import resourcetypes.CmsNewResourceTypeProcedure;
+import reverseSyncProcessor.ReverseSyncHelper;
 
 /**
  *
@@ -377,7 +378,6 @@ public class ModuleCommands implements I_CmsShellCommands {
      */
     public void syncRFSandVFSExclusionFile(String rfsFolder, String vfsFolders, String exclusionFile) throws CmsSynchronizeException, CmsException,
             FileNotFoundException, IOException, Exception {
-        File rfsDir = new File(rfsFolder);
         if (new File(exclusionFile).exists()) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(exclusionFile))));
             String exclusionPattern;
@@ -559,6 +559,18 @@ public class ModuleCommands implements I_CmsShellCommands {
         exportHandler.setExportParams(exportParameters);
         OpenCms.getImportExportManager().exportData(m_cms, exportHandler,
                 new CmsShellReport(m_cms.getRequestContext().getLocale()));
+    }
+
+    /**
+     * Overwrites the files in the selectedIDEPath with the content
+     * of the VFS resources.
+     * @param selectedIDEPath
+     * @param modulename
+     * @throws CmsException
+     * @throws IOException 
+     */
+    public void reverseSyncSelection(String selectedIDEPath, String modulename) throws CmsException, IOException {
+        ReverseSyncHelper.reverseSync(m_cms, selectedIDEPath, modulename);
     }
 
     /**

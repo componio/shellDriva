@@ -42,10 +42,15 @@ public class ProjectConstants {
      */
     public static final String PATH_TEMPLATES = "templates/";
     /**
-     * Template folder within the module. taken from
+     * Formatters folder within the module. taken from
      * org.opencms.workplace.tools.modules.CmsModulesEditBase
      */
     public static final String PATH_FORMATTERS = "formatters/";
+
+    /**
+     * OpenCms Parent Path for modules
+     */
+    public static final String PATH_MODULES = "/system/modules";
 
     /**
      * The default OpenCms CMIS-URL
@@ -56,7 +61,7 @@ public class ProjectConstants {
      * Message bundle file name suffix.
      */
     public static final String SUFFIX_BUNDLE_FILE = ".workplace";
-    
+
     /**
      * Sample file.
      */
