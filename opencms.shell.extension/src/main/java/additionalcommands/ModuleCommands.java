@@ -569,7 +569,7 @@ public class ModuleCommands implements I_CmsShellCommands {
      * @throws CmsException
      * @throws IOException 
      */
-    public void reverseSyncSelection(String selectedIDEPath, String modulename) throws CmsException, IOException {
+    public void reverseSyncSingle(String selectedIDEPath, String modulename) throws CmsException, IOException {
         ReverseSyncHelper.reverseSync(m_cms, selectedIDEPath, modulename);
     }
 

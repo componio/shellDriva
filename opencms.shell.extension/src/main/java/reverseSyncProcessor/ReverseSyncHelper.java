@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.opencms.file.CmsFile;
@@ -31,10 +32,13 @@ public class ReverseSyncHelper {
         File rfsPath = new File(rfsResource);
         String pathPrefix = modulename + "/" + "Web";
         String subPath = rfsResource.substring(rfsResource.indexOf(pathPrefix));
+
+        String rfsPrefix = rfsResource.substring(0, rfsResource.lastIndexOf("Web")) + "Web";
+
         subPath = subPath.replace(pathPrefix, "");
         String vfsPath = ProjectConstants.PATH_MODULES + "/" + modulename + subPath;
         if (rfsPath.exists() && m_cms.existsResource(vfsPath)) {
-            copyVfsFilesToRfsFiles(m_cms, vfsPath, modulename, rfsResource);
+            copyVfsFilesToRfsFiles(m_cms, vfsPath, modulename, rfsPrefix);
         } else {
             System.err.println("!!! Reverse Sync Failed ");
             System.err.println("Path: " + vfsPath + "or ");
@@ -58,7 +62,7 @@ public class ReverseSyncHelper {
             final String modulename,
             final String rfsPrefix) {
         String rootPath;
-        String vfsPrefix = ProjectConstants.PATH_MODULES + modulename;
+        String vfsPrefix = ProjectConstants.PATH_MODULES + "/" + modulename;
         LinkedHashMap<String, String> mapping = new LinkedHashMap<String, String>();
         if (resources == null || resources.isEmpty()) {
             return mapping;
@@ -72,10 +76,17 @@ public class ReverseSyncHelper {
         return mapping;
     }
 
-    private static void copyVfsFilesToRfsFiles(CmsObject m_cms, String vfsPath, String modulename, String rfsPrefix) throws CmsException, IOException {
-        List<CmsResource> resources = m_cms.readResources(vfsPath, CmsResourceFilter.ALL);
-        LinkedHashMap<String, String> mapping = mapVFStoRFS(resources, modulename, rfsPrefix);
+    private static void copyVfsFilesToRfsFiles(CmsObject m_cms, final String vfsPath, final String modulename, final String rfsPrefix) throws CmsException, IOException {
+        List<CmsResource> resources = new ArrayList<CmsResource>();
+        CmsResource res = m_cms.readResource(vfsPath);
 
+        if (res.isFile()) {
+            resources.add(res);
+        } else {
+            resources = m_cms.readResources(vfsPath, CmsResourceFilter.ALL);
+        }
+
+        LinkedHashMap<String, String> mapping = mapVFStoRFS(resources, modulename, rfsPrefix);
         for (String key : mapping.keySet()) {
             CmsResource resource = m_cms.readResource(key);
             if (resource.isFolder()) {
@@ -84,7 +95,7 @@ public class ReverseSyncHelper {
                     rfsDir.mkdir();
                 }
             } else {
-                copyVfsFileToRfsFile(m_cms, mapping.get(key), vfsPath);
+                copyVfsFileToRfsFile(m_cms, mapping.get(key), key);
             }
         }
     }

@@ -3,7 +3,7 @@
   <groupId>net.componio</groupId>
   <artifactId>opencms.shell.extension</artifactId>
   <versioning>
-    <release>0.9.4_95x</release>
+    <release>0.9.5_95x</release>
     <versions>
       <version>1.0</version>
       <version>0.9.0</version>
@@ -11,7 +11,8 @@
       <version>0.9.2</version>
       <version>0.9.3</version>
       <version>0.9.4_95x</version>
+      <version>0.9.5_95x</version>
     </versions>
-    <lastUpdated>20150119203716</lastUpdated>
+    <lastUpdated>20150629111851</lastUpdated>
   </versioning>
 </metadata>
