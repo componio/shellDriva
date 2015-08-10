@@ -2,7 +2,7 @@ package resourcetypes;
 
 public enum OpenCmsVersion {
 
-    V850("8.5.0"), V851("8.5.1"), V852("8.5.2"), V901("9.0.1"), V950("9.5.0");
+    V850("8.5.0"), V851("8.5.1"), V852("8.5.2"), V901("9.0.1"), V950("9.5.0"), V951("9.5.1"), V952("9.5.2");
     private final String value;
 
     OpenCmsVersion(String value) {
@@ -25,6 +25,6 @@ public enum OpenCmsVersion {
                 return v;
             }
         }
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("OpenCms Version not supported: " + value);
     }
 }

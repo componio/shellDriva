@@ -97,6 +97,12 @@ public class CmsNewResourceTypeProcedure {
             case V950:
                 copyFiles_9x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
                 break;
+            case V951:
+                copyFiles_9x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
+                break;
+            case V952:
+                copyFiles_9x(isSchema, module, m_cms, moduleFolder, m_resInfo, iconPath);
+                break;
             default:
                 break;
         }
