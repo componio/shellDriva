@@ -370,12 +370,13 @@ public class CmsNewResourceTypeProcedure {
 
     public static CmsExplorerTypeSettings getResourceExplorerTypeSettings(CmsResourceTypeInfoBean m_resInfo) {
         CmsExplorerTypeSettings setting = new CmsExplorerTypeSettings();
-        setting.setTypeAttributes(
+        setting.setTypeAttributes(m_resInfo.getName(), m_resInfo.getNiceName(), m_resInfo.getSmallIcon());
+        /*setting.setTypeAttributes(
                 m_resInfo.getName(),
                 m_resInfo.getNiceName(),
                 m_resInfo.getSmallIcon(),
                 m_resInfo.getBigIcon(),
-                "xmlcontent");
+                "xmlcontent");*/
         setting.setNewResourceUri("newresource_xmlcontent.jsp?newresourcetype=" + m_resInfo.getName());
         setting.setNewResourcePage("structurecontent");
         setting.setAutoSetNavigation("false");
