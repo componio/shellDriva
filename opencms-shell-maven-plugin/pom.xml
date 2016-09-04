@@ -15,7 +15,7 @@
         <repository>
             <id>componio Repo</id>
             <name>componio Repo</name>
-            <url>https://github.com/tpinkowski/shellDriva/tree/master/lib-repo</url>
+            <url>https://raw.githubusercontent.com/tpinkowski/shellDriva/tree/master/lib-repo</url>
         </repository>
     </repositories>
     

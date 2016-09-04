@@ -4,7 +4,7 @@
 
     <groupId>net.componio</groupId>
     <artifactId>opencms.shell.extension</artifactId>
-    <version>0.9.5_10.0.0</version>
+    <version>0.9.5_10.0.1</version>
     <packaging>jar</packaging>
 
     <name>opencms.shell.extension</name>
@@ -20,12 +20,12 @@
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-core</artifactId> 
-           <version>10.0.0</version>
+           <version>10.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.opencms</groupId>
             <artifactId>opencms-setup</artifactId>
-            <version>10.0.0</version>
+            <version>10.0.1</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
