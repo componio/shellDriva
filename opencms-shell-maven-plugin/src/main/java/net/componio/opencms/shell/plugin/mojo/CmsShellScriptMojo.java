@@ -11,11 +11,13 @@ import java.io.FileNotFoundException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.componio.opencms.shell.plugin.utility.UtilityHelper;
+import org.apache.commons.logging.LogFactory;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.opencms.main.CmsLog;
 import org.opencms.main.CmsShell;
 
 /**
@@ -50,6 +52,7 @@ public class CmsShellScriptMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         CmsShell shell;
         try {
+            CmsLog.INIT = LogFactory.getLog("org.opencms.init");
             shell = UtilityHelper.getShell(web_inf, servlet_mapping, additional_commands);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(CmsShellScriptMojo.class.getName()).log(Level.SEVERE, null, ex);

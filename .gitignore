@@ -215,3 +215,4 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 /opencms.shell.extension/target/
+/opencms-shell-maven-plugin/target/

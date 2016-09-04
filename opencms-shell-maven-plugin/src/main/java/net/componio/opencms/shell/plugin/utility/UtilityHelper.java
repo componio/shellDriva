@@ -17,7 +17,7 @@ public class UtilityHelper {
     public static CmsShell getShell(String web_inf, String servlet_mapping, String additional_commands) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         CmsShell shell = null;
         I_CmsShellCommands commands = getShellCommands(additional_commands);
-        shell = new CmsShell(web_inf, (servlet_mapping.isEmpty() ? null : servlet_mapping), null, "${user}@${project}>", commands);
+        shell = new CmsShell(web_inf, (servlet_mapping == null || servlet_mapping.isEmpty() ? null : servlet_mapping), null, "${user}@${project}>", commands);
         return shell;
     }
     
