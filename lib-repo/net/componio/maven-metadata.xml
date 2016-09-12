@@ -6,5 +6,10 @@
       <prefix>opencms-shell</prefix>
       <artifactId>opencms-shell-maven-plugin</artifactId>
     </plugin>
+    <plugin>
+      <name>opencms-shell-maven-plugin-85x</name>
+      <prefix>opencms-shell85x</prefix>
+      <artifactId>opencms-shell-maven-plugin-85x</artifactId>
+    </plugin>
   </plugins>
 </metadata>

@@ -216,3 +216,5 @@ pip-log.txt
 .mr.developer.cfg
 /opencms.shell.extension/target/
 /opencms-shell-maven-plugin/target/
+/opencms-shell-maven-parent/opencms-shell-maven-8x/target/
+/opencms-shell-maven-parent/opencms-shell-maven-10x/target/
