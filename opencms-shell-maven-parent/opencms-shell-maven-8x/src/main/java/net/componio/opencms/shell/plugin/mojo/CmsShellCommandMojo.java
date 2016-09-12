@@ -55,7 +55,7 @@ public class CmsShellCommandMojo extends AbstractMojo {
         CmsShell shell;
         try {
             //CmsLog.INIT = LogFactory.getLog("org.opencms.init");
-            File temp = UtilityHelper.createTempFile("./temp");
+            File temp = UtilityHelper.createTempFile("./temp.txt");
             FileWriter writer = new FileWriter(temp);
             writer.write(command);
             writer.close();

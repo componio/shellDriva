@@ -3,13 +3,13 @@
   <groupId>net.componio</groupId>
   <artifactId>opencms-shell-maven-plugin</artifactId>
   <versioning>
-    <latest>10.0.x</latest>
-    <release>10.0.x</release>
+    <latest>8.5.x</latest>
+    <release>8.5.x</release>
     <versions>
       <version>0.9</version>
       <version>8.5.x</version>
       <version>10.0.x</version>
     </versions>
-    <lastUpdated>20160912125209</lastUpdated>
+    <lastUpdated>20160912210507</lastUpdated>
   </versioning>
 </metadata>
